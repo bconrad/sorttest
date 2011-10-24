@@ -1,5 +1,5 @@
 sorttest: main.c
-	gcc main.c -g -lm -o sorttest
+	gcc main.c -Wall -g -lm -o sorttest
 
 andrun: sorttest
 	./sorttest

@@ -1,7 +1,22 @@
 Makes a list of random numbers and runs various sorts on them
 
+Arguments:
+	-l<length>
+		Sets the length of the generated list (defaults to 10, can easily be >10000)
+	-g<type>
+		Sets the type of list generated:
+		 -gs = sequential list of integers
+		 -gh = shuffled list of integers
+		 -gr = list of random integers
+	-d
+		Generates and dumps list, then exits
+
+Currently implemented algorithms:
+ - Bubblesort
+ - Quicksort
+ - Insertion sort
+
 TODO:
- - Accept arguments
  - Implement radix sort (I'm embarrassed about the current broken code)
  - See if there's an alternative to that damn macro
- - Optional graphical output (will require some clever Makefile'ing)
+ - Select sorting algorithms by command line
