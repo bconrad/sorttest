@@ -15,8 +15,9 @@ Currently implemented algorithms:
  - Bubblesort
  - Quicksort
  - Insertion sort
+ - In-place Binary MSD Radix sort
 
 TODO:
- - Implement radix sort (I'm embarrassed about the current broken code)
+ - Implement radix sort for arbitrary radices (I'm embarrassed about the current broken code)
  - See if there's an alternative to that damn macro
  - Select sorting algorithms by command line

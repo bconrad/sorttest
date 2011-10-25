@@ -10,6 +10,7 @@
 enum {
 	DUMP_LIST = 0,
 	LIST_METHOD,
+	VALIDATE_LIST,
 	ALL_OPTIONS
 } OPTIONS;
 
@@ -17,6 +18,7 @@ enum {
 	BUBBLE_SORT = 0,
 	INSERTION_SORT,
 	QUICK_SORT,
+	BINARY_RADIX_SORT,
 	ALL_SORTS
 } SORTS;
 
@@ -64,7 +66,25 @@ void inline stupid_swap (int* a, int* b) {
 	*b = buffer;
 }
 
-//returns the time taken
+void print_list(int * list, int length) {
+	int i;
+	for (i = 0; i < length; i++)
+		printf("%d: %8x\n", i, list[i]);
+	printf("\n");
+}
+
+void check_list(int *list, int length) {
+	int i;
+	for (i = 0; i < length - 1; i++) {
+		if (list[i] > list[i + 1]) {
+			printf("List is out of order at element %d:\n%d - %d\n", i, list[i], list[i + 1]);
+			print_list(list, length);
+			return;
+		}
+	}
+}
+
+// returns the time taken
 double bubble_sort (int* list, int length) {
 	timer t;
 	init_timer(&t);
@@ -106,6 +126,36 @@ double insertion_sort(int* list, int length) {
 		}
 		list[i+1] = key;
 	}
+
+	return stop_timer(&t);
+}
+
+/* In place MSD radix */
+void binary_radix_sort_real(int *list, int length, int digit) {
+
+	if (length <= 1 || digit + 1 >= sizeof(int) * 8)
+		return;
+	int *zerobound = list, *onebound = &list[length - 1];
+
+	while(zerobound - onebound != 1) {
+		if ((*zerobound >> (sizeof(int) * 8 - digit - 2)) & 0x01) {
+			stupid_swap(zerobound, onebound);
+			onebound--;
+		} else {
+			zerobound++;
+		}
+	}
+
+	binary_radix_sort_real(list, zerobound - list, digit + 1);
+	binary_radix_sort_real(onebound + 1, &list[length - 1] - onebound, digit + 1);
+}
+
+double binary_radix_sort(int *list, int length) {
+	timer t;
+	init_timer(&t);
+	begin_timer(&t);
+
+	binary_radix_sort_real(list, length, 0);
 
 	return stop_timer(&t);
 }
@@ -213,7 +263,7 @@ void generate_random_list(int* list, int length) {
 	srand(iseed);
 	int i = 0;
 	for (i = 0; i < length; i++) {
-		list[i] = (float) (10 * length) * ((float) rand() / (float) RAND_MAX);
+		list[i] = rand();
 	}
 }
 
@@ -236,22 +286,6 @@ void generate_shuffled_list(int *list, int length) {
 
 }
 
-void check_list(int *list, int length) {
-	int i;
-	for (i = 0; i < length - 1; i++) {
-		if (list[i] > list[i + 1]) {
-			printf("List is out of order:\n%d - %d\n", list[i], list[i + 1]);
-			return;
-		}
-	}
-}
-
-void print_list(int * list, int length) {
-	int i;
-	for (i = 0; i < length; i++)
-		printf("%d: %d\n", i, list[i]);
-}
-
 void print_help(char** argv) {
 	printf("Usage:\n\
 			%s -l<length>\n", argv[0]);
@@ -260,10 +294,10 @@ void print_help(char** argv) {
 int main (int argc, char** argv) {
 	int length = LENGTH;
 
-	//initializes all elements to 0 (even when the initializer has only one element)
+	// initializes all elements to 0 (even when the initializer has only one element)
 	int options[ALL_OPTIONS] = {0};
 
-	//function map
+	// function map
 	double (*sort_functions[ALL_SORTS])(int*, int);
 	char* function_names[ALL_SORTS];
 
@@ -274,15 +308,15 @@ int main (int argc, char** argv) {
 	addsort(BUBBLE_SORT, bubble_sort);
 	addsort(INSERTION_SORT, insertion_sort);
 	addsort(QUICK_SORT, quick_sort);
+	addsort(BINARY_RADIX_SORT, binary_radix_sort);
 
-	//parse the command line options
+	// parse the command line options
 	if (argc >= 2) {
 		char option;
-		while ((option = (char) getopt(argc, argv, "l:adg:")) > 0) {
+		while ((option = (char) getopt(argc, argv, "l:adg:c")) > 0) {
 			switch (option) {
 				case 'l' :
 					length = strtol(optarg, NULL, 10);
-					printf("Array size: %d\n", length);
 					break;
 
 				case 'd' :
@@ -301,6 +335,11 @@ int main (int argc, char** argv) {
 							options[LIST_METHOD] = LIST_SHUFFLE;
 							break;
 					}
+					break;
+
+				case 'c' :
+					options[VALIDATE_LIST] = 1;
+					break;
 
 			}
 		}
@@ -333,7 +372,8 @@ int main (int argc, char** argv) {
 	for (i = 0; i < ALL_SORTS; i++) {
 		memcpy(templist, numbers, length * sizeof(int));
 		printf("%s: %.2fs\n",function_names[i] , (*sort_functions[i])(templist, length) / CLOCKS_PER_SEC);
-		check_list(templist, length);
+		if (options[VALIDATE_LIST])
+			check_list(templist, length);
 	}
 	return 0;
 
